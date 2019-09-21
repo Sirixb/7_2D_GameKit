@@ -53,7 +53,7 @@ namespace Gamekit2D
             s_Instance = null;
         }
 
-        protected override void GetInputs(bool fixedUpdateHappened)
+        protected override void GetInputs(bool fixedUpdateHappened)//bool fixedUpdateHappned "hay input"?
         {
             Pause.Get(fixedUpdateHappened, inputType);
             Interact.Get(fixedUpdateHappened, inputType);

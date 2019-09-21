@@ -109,7 +109,7 @@ namespace Gamekit2D
 
         protected const float k_MinHurtJumpAngle = 0.001f;
         protected const float k_MaxHurtJumpAngle = 89.999f;
-        protected const float k_GroundedStickingVelocityMultiplier = 3f;    // This is to help the character stick to vertically moving platforms.
+        protected const float k_GroundedStickingVelocityMultiplier = 3f;    // This is to help the character stick to vertically moving platforms.Esto es para ayudar al personaje a adherirse a plataformas que se mueven verticalmente.
 
         //used in non alloc version of physic function
         protected ContactPoint2D[] m_ContactsBuffer = new ContactPoint2D[16];
@@ -346,8 +346,8 @@ namespace Gamekit2D
         {
             m_MoveVector.x = newHorizontalMovement;
         }
-
-        public void SetVerticalMovement(float newVerticalMovement)
+        //Establecer el valor del salto
+        public void SetVerticalMovement(float newVerticalMovement)//se le manda la variable JumpSpeed desde LocomotionSMB.cs
         {
             m_MoveVector.y = newVerticalMovement;
         }
@@ -366,7 +366,7 @@ namespace Gamekit2D
         {
             m_MoveVector.y += additionalVerticalMovement;
         }
-
+        //Movimiento vertical en piso (Gravedad)
         public void GroundedVerticalMovement()
         {
             m_MoveVector.y -= gravity * Time.deltaTime;
@@ -381,7 +381,7 @@ namespace Gamekit2D
         {
             return m_MoveVector;
         }
-
+        //Retorne el estado en un bool: si esta cayendo y si el parametro de suelo es falso
         public bool IsFalling()
         {
             return m_MoveVector.y < 0f && !m_Animator.GetBool(m_HashGroundedPara);
@@ -533,15 +533,17 @@ namespace Gamekit2D
             if(m_CurrentPushable)
                 m_CurrentPushable.EndPushing();
         }
-
+        //Actualiza el salto para mantener el vuelo si esta sostenido
         public void UpdateJump()
         {
-            if (!PlayerInput.Instance.Jump.Held && m_MoveVector.y > 0.0f)
-            {
-                m_MoveVector.y -= jumpAbortSpeedReduction * Time.deltaTime;
-            }
+            //Si esta sostenido el boton de salto y estoy en el aire (evita el doble salto)
+            //if (!PlayerInput.Instance.Jump.Held && m_MoveVector.y > 0.0f)//
+            //{
+            //    //Aumente la velocidad de caida
+            //    //  m_MoveVector.y -= jumpAbortSpeedReduction * Time.deltaTime;
+            //}
         }
-
+        //Movimiento Horizontal aereo
         public void AirborneHorizontalMovement()
         {
             float desiredSpeed = PlayerInput.Instance.Horizontal.Value * maxSpeed;
@@ -555,16 +557,16 @@ namespace Gamekit2D
 
             m_MoveVector.x = Mathf.MoveTowards(m_MoveVector.x, desiredSpeed, acceleration * Time.deltaTime);
         }
-
+        //Movimiento aereo vetical
         public void AirborneVerticalMovement()
-        {
+        {   //Si el vector en y es aproximadamente 0 ó golpea techo y el vectorY es mayor a 0
             if (Mathf.Approximately(m_MoveVector.y, 0f) || m_CharacterController2D.IsCeilinged && m_MoveVector.y > 0f)
             {
-                m_MoveVector.y = 0f;
+                m_MoveVector.y = 0f;// establezcalo en cero
             }
-            m_MoveVector.y -= gravity * Time.deltaTime;
+            m_MoveVector.y -= gravity * Time.deltaTime;//aplique gravedad
         }
-
+        //Comprobar el imput de salto
         public bool CheckForJumpInput()
         {
             return PlayerInput.Instance.Jump.Down;
@@ -574,7 +576,7 @@ namespace Gamekit2D
         {
             return PlayerInput.Instance.Vertical.Value < -float.Epsilon && PlayerInput.Instance.Jump.Down;
         }
-
+        //Pasar a traves de la plataforma
         public bool MakePlatformFallthrough()
         {
             int colliderCount = 0;

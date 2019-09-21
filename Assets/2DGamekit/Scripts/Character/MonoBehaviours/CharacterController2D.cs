@@ -116,8 +116,8 @@ namespace Gamekit2D
             {
                 //inicio de rayo comienza con la posicion del rigid + la compensación
                 raycastStart = m_Rigidbody2D.position + m_Capsule.offset;//encuentre el centro del personaje
-                raycastDistance = m_Capsule.size.x * 0.5f + groundedRaycastDistance * 2f;
-                
+                raycastDistance = m_Capsule.size.x * 0.5f + groundedRaycastDistance * 2f; //valor de mitad del personaje en x + rayo a Piso= .1f *2f(supungo que para anticipar mas el rayo)
+
                 if (bottom)
                 {
                     //Calcule el inicio del rayo en el centro inferior, multiplico down(-) por la mitad Y y a Y le quita el valor de la mitad de X del tamaño del collider
