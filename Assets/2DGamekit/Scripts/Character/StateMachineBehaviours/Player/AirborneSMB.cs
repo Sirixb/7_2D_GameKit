@@ -8,11 +8,11 @@ namespace Gamekit2D
     {
         public override void OnSLStateNoTransitionUpdate (Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            m_MonoBehaviour.UpdateFacing();
-            m_MonoBehaviour.UpdateJump();//actualice el salto y si esta presinado
-            m_MonoBehaviour.AirborneHorizontalMovement();
-            m_MonoBehaviour.AirborneVerticalMovement();
-            m_MonoBehaviour.CheckForGrounded();
+            m_MonoBehaviour.UpdateFacing();//Rotación
+            m_MonoBehaviour.UpdateJump();//Salto6. actualice el salto y si esta presionado
+            m_MonoBehaviour.AirborneHorizontalMovement();//Salto8. verifique la horizontal deseada
+            m_MonoBehaviour.AirborneVerticalMovement();//Salto10. Verifique si choco contra techo
+            m_MonoBehaviour.CheckForGrounded();//Comprueba Suelo
             m_MonoBehaviour.CheckForHoldingGun();
             if(m_MonoBehaviour.CheckForMeleeAttackInput())
                 m_MonoBehaviour.MeleeAttack ();

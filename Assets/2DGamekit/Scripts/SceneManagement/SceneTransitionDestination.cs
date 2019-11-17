@@ -11,9 +11,9 @@ namespace Gamekit2D
         }
 
 
-        public DestinationTag destinationTag;    // This matches the tag chosen on the TransitionPoint that this is the destination for.
+        public DestinationTag destinationTag;    // This matches the tag chosen on the TransitionPoint that this is the destination for.//esto es un enum
         [Tooltip("This is the gameobject that has transitioned.  For example, the player.")]
         public GameObject transitioningGameObject;
-        public UnityEvent OnReachDestination;
+        public UnityEvent OnReachDestination;//Llamado en Scene Controller, el unity event saca opciones en el inspector
     }
 }

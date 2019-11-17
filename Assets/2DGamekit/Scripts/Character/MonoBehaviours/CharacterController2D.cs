@@ -18,7 +18,7 @@ namespace Gamekit2D
         Vector2 m_CurrentPosition;
         Vector2 m_NextMovement;
         ContactFilter2D m_ContactFilter;
-        RaycastHit2D[] m_HitBuffer = new RaycastHit2D[5];//Almacen temporal de resultados del Raycast
+        RaycastHit2D[] m_HitBuffer = new RaycastHit2D[5];//Almacen temporal de resultados del Raycast que incluso puede atravesar y encontrar mas impactos
         RaycastHit2D[] m_FoundHits = new RaycastHit2D[3];//Almacena los HitBuffer o Golpes Bufffer
         Collider2D[] m_GroundColliders = new Collider2D[3];
         Vector2[] m_RaycastPositions = new Vector2[3];
@@ -47,16 +47,17 @@ namespace Gamekit2D
         }
 
         void FixedUpdate()
-        {
+        {   //Posicion actual del Rigidbody
             m_PreviousPosition = m_Rigidbody2D.position;
-            m_CurrentPosition = m_PreviousPosition + m_NextMovement;
-            Velocity = (m_CurrentPosition - m_PreviousPosition) / Time.deltaTime;
-
+            //Se necesta la posicion previa y la siguiente para que el rigidbody sepa donde debe estar
+            m_CurrentPosition = m_PreviousPosition + m_NextMovement;// proximoMov se configura en el metodo abajo y contiene el valor real
+            Velocity = (m_CurrentPosition - m_PreviousPosition) / Time.deltaTime;//es usado mas abajo para saber si es piso
+            //Mueve el rigidbody2D
             m_Rigidbody2D.MovePosition(m_CurrentPosition);
-            m_NextMovement = Vector2.zero;//resetea el movetowards de PlayerCharacter.CS para detener el movimiento de la funcion movetowards
-
+            m_NextMovement = Vector2.zero;//resetea el movimiento acumulado 
+            //aqui va funcion de compruebe colisines al final de la capsula
             CheckCapsuleEndCollisions();
-            CheckCapsuleEndCollisions(false);
+            CheckCapsuleEndCollisions(false);//Muestra los rayos para arriba de una vez para detectar techo
         }
         //Movimineto del Rigidbody
         /// <summary>
@@ -65,7 +66,7 @@ namespace Gamekit2D
         /// <param name="movement">The amount moved in global coordinates relative to the rigidbody2D's position.</param>
         public void Move(Vector2 movement)
         {
-            m_NextMovement += movement;
+            m_NextMovement += movement;//acumulador en vector 2
         }
 
         /// <summary>
@@ -147,18 +148,18 @@ namespace Gamekit2D
 
                 if (bottom)//Si es piso almacene esos colliders.
                 {
-                    //Encontro mas de un golpe si si:almacene ese golpetemporal encontrado, sino:almacene un raycashit2d vacio
-                    m_FoundHits[i] = count > 0 ? m_HitBuffer[0] : new RaycastHit2D();
-                    m_GroundColliders[i] = m_FoundHits[i].collider; //Almacene el collider de los golpes encontrados
+                    //Encontro mas de un golpe? si si:almacene ese golpetemporal encontrado, sino:almacene un raycashit2d vacio
+                    m_FoundHits[i] = count > 0 ? m_HitBuffer[0] : new RaycastHit2D();//almacene el primer objeto golpeado de cada uno de los 3 rayos
+                    m_GroundColliders[i] = m_FoundHits[i].collider; //Almacene los collider de los primeros golpes encontrados
                 }
                 else//Es techo
                 {
                     IsCeilinged = false;//si va en el aire y no ha golpeado nada
-
+                    //hasta la cantidad de golpes
                     for (int j = 0; j < m_HitBuffer.Length; j++)
                     {
                         if (m_HitBuffer[j].collider != null) //Si lo que golpeo tiene un collider
-                        {
+                        {   //Creo dice si es diferente a una plataforma mobil entonces es techo
                             if (!PhysicsHelper.ColliderHasPlatformEffector(m_HitBuffer[j].collider))//Cache para plataformas
                             {
                                 IsCeilinged = true;//Es techo
@@ -175,9 +176,9 @@ namespace Gamekit2D
 
                 for (int i = 0; i < m_FoundHits.Length; i++)
                 {
-                    if (m_FoundHits[i].collider != null)//Si hay colliders
+                    if (m_FoundHits[i].collider != null)//Si hay colliders encontrados en el primer impacto de cada rayo
                     {
-                        groundNormal += m_FoundHits[i].normal;//Acumule en el vector2 las normales de todos los golpes
+                        groundNormal += m_FoundHits[i].normal;//Acumule en el vector2 las normales de todos los golpes encontrados
                         hitCount++;
                     }
                 }
@@ -201,23 +202,23 @@ namespace Gamekit2D
                         break;
                     }
                 }
-                //Debe determinar si esta en el piso
+                //Piso. Debe determinar si esta en el piso
                 //Si la normal en X e Y es 0 es porque esta en el aire no hay normales que rebotan de los colliders
                 if (Mathf.Approximately(groundNormal.x, 0f) && Mathf.Approximately(groundNormal.y, 0f))
                 {
                     IsGrounded = false;
                 }
-                else
+                else// Es piso
                 {
-                    IsGrounded = relativeVelocity.y <= 0f;//Es piso si la velocidad relativa en Y es menor o igual a cero
+                    IsGrounded = relativeVelocity.y <= 0f;//Es piso si hay normales rebotando y velocidad relativa en Y es menor o igual a cero, es decir si el personaje esta quieto o con gravedad ejerciendo
 
                     if (m_Capsule != null)//Si no tiene capsula
                     {
-                        if (m_GroundColliders[1] != null)//Pero encontro un golpe, supungo que cero seria el mismo
+                        if (m_GroundColliders[1] != null)//Pero encontro un golpe en la posicion 1, supungo que cero seria el mismo
                         {
-                            float capsuleBottomHeight = m_Rigidbody2D.position.y + m_Capsule.offset.y - m_Capsule.size.y * 0.5f;
-                            float middleHitHeight = m_FoundHits[1].point.y;
-                            IsGrounded &= middleHitHeight < capsuleBottomHeight + groundedRaycastDistance;
+                            float capsuleBottomHeight = m_Rigidbody2D.position.y + m_Capsule.offset.y - m_Capsule.size.y * 0.5f;//en la posicion del rigidbody + la compensacion de la cap en Y - la mitad de la cap 
+                            float middleHitHeight = m_FoundHits[1].point.y;//punto Y del golpe 2 ( el 1 seria [0])
+                            IsGrounded &= middleHitHeight < capsuleBottomHeight + groundedRaycastDistance;//si es menor de la posicion a la capsula + distancia de rayo entonces true
                             //el operador & evalúa ambos operandos, incluso aunque el izquierdo se evalúe como false, de modo que el resultado debe ser false con independencia del valor del operando derecho.
                             //el operador && no evalúa el operando derecho si el izquierdo se evalúa como false.
                         }

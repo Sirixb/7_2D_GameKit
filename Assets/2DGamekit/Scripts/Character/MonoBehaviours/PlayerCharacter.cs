@@ -204,7 +204,7 @@ namespace Gamekit2D
         void FixedUpdate()
         {
             //Funcion Move de CharacterController2D y le pasa el vector de movimiento
-            m_CharacterController2D.Move(m_MoveVector * Time.deltaTime);
+            m_CharacterController2D.Move(m_MoveVector * Time.deltaTime);//Fisicas
             m_Animator.SetFloat(m_HashHorizontalSpeedPara, m_MoveVector.x);//Parametro X animador
             m_Animator.SetFloat(m_HashVerticalSpeedPara, m_MoveVector.y);//Parametro Y animador
             UpdateBulletSpawnPointPositions();
@@ -346,8 +346,8 @@ namespace Gamekit2D
         {
             m_MoveVector.x = newHorizontalMovement;
         }
-        //Establecer el valor del salto
-        public void SetVerticalMovement(float newVerticalMovement)//se le manda la variable JumpSpeed desde LocomotionSMB.cs
+        //Salto4. Establecer el valor del salto y hace pasar el estado a AirbonerneSMB evitando el doble salto o salto infinito
+        public void SetVerticalMovement(float newVerticalMovement)//recibe la variable JumpSpeed desde LocomotionSMB.cs
         {
             m_MoveVector.y = newVerticalMovement;
         }
@@ -366,15 +366,18 @@ namespace Gamekit2D
         {
             m_MoveVector.y += additionalVerticalMovement;
         }
-        //Movimiento vertical en piso (Gravedad)
+        //MVertical2 en piso (Gravedad1 en piso)
         public void GroundedVerticalMovement()
-        {
-            m_MoveVector.y -= gravity * Time.deltaTime;
+        {   //Baje por efecto de gravedad
+            m_MoveVector.y -= gravity * Time.deltaTime;//0 = 0 -38 * 0.02= Cada frame restele 0.76f 
 
+            //Plataformas moviles verticales
+            //Si la cantidad acumulada en Y es menor a la de la gravedad: -1 < -38*0.02*3= -2.28
             if (m_MoveVector.y < -gravity * Time.deltaTime * k_GroundedStickingVelocityMultiplier)
-            {
+            {   //aplique esa misma cantidad: -2.28 (K_groun sirve para que no se atasque en las plataformas verticales)
                 m_MoveVector.y = -gravity * Time.deltaTime * k_GroundedStickingVelocityMultiplier;
             }
+           // print("sin gravedad piso");
         }
 
         public Vector2 GetMoveVector()
@@ -422,29 +425,32 @@ namespace Gamekit2D
         {
             return spriteRenderer.flipX != spriteOriginallyFacesLeft ? -1f : 1f;
         }
-        //Movimiento: useInput llega en true desde LocomotionSMB
-        public void GroundedHorizontalMovement(bool useInput, float speedScale = 1f)
+        //MHorizontal2: useInput llega en true desde LocomotionSMB
+        public void GroundedHorizontalMovement(bool useInput, float speedScale = 1f)//el bool seguro sirve para validadr el poder controlar el jugador
         {
-            //Hay input del usuario?si si asigne sino  0f
+            //VelocidadDeseada = Hay input del usuario?(true por defecto) si si asigne input 1 * 7 *1f(variable local)= 7 o -7  sino  0f
             float desiredSpeed = useInput ? PlayerInput.Instance.Horizontal.Value * maxSpeed * speedScale : 0f;
+            //AceleraciOn = true por defecto y recibe inpunt? aceleraciónSuelo, sino desaceleración.
             float acceleration = useInput && PlayerInput.Instance.Horizontal.ReceivingInput ? groundAcceleration : groundDeceleration;
+            // Mueva horizontalmente(0,7,100 * 0.02f=2f)= 7 ó -7
             m_MoveVector.x = Mathf.MoveTowards(m_MoveVector.x, desiredSpeed, acceleration * Time.deltaTime);
+           
         }
         //Comprobacion para agacharse
         public void CheckForCrouching()
         {
             m_Animator.SetBool(m_HashCrouchingPara, PlayerInput.Instance.Vertical.Value < 0f);
         }
-        //Se envia al animator el resultado de si esta en piso y el audio
+        //Suelo1 y Salto5. Se envia al animator el resultado de si esta en piso y el audio
         public bool CheckForGrounded()
-        {
+        {   //Estaba en el suelo
             bool wasGrounded = m_Animator.GetBool(m_HashGroundedPara);
             bool grounded = m_CharacterController2D.IsGrounded;
-
+            //Si es piso
             if (grounded)
-            {
+            {   //Encuentre la superficie actual
                 FindCurrentSurface();
-
+                //Si no estaba en el suelo y el vector en y es < a -1.0f
                 if (!wasGrounded && m_MoveVector.y < -1.0f)
                 {//only play the landing sound if falling "fast" enough (avoid small bump playing the landing sound)
                     landingAudioPlayer.PlayRandomSound(m_CurrentSurface);
@@ -452,12 +458,12 @@ namespace Gamekit2D
             }
             else
                 m_CurrentSurface = null;
-
+            //Asigne si esta en el suelo o no
             m_Animator.SetBool(m_HashGroundedPara, grounded);
-
+            //devuelva el estado de suelo
             return grounded;
         }
-
+        //Encontrar superficie
         public void FindCurrentSurface()
         {
             Collider2D groundCollider = m_CharacterController2D.GroundColliders[0];
@@ -533,40 +539,48 @@ namespace Gamekit2D
             if(m_CurrentPushable)
                 m_CurrentPushable.EndPushing();
         }
-        //Actualiza el salto para mantener el vuelo si esta sostenido
+        //Salto7. Actualiza el salto para controlar la intensidad del salto y reduzca el vuelo aumentando la gravedad
         public void UpdateJump()
         {
-            //Si esta sostenido el boton de salto y estoy en el aire (evita el doble salto)
-            //if (!PlayerInput.Instance.Jump.Held && m_MoveVector.y > 0.0f)//
-            //{
-            //    //Aumente la velocidad de caida
-            //    //  m_MoveVector.y -= jumpAbortSpeedReduction * Time.deltaTime;
-            //}
+            //Si no esta sostenido el boton de salto y estoy en el aire, mayor a la maxima altura (intensidad de salto)
+            // o suelto el boton de salto mientras esta subiendo
+            if (!PlayerInput.Instance.Jump.Held && m_MoveVector.y > 0.0f)//
+            {
+                print("gravedad solte boton");
+                //Gravedad2 (aplicada en aire): Aumnete la velocidad de caida o aplique mas gravedad: y= y - 100*0.02=2 ( la gravedad normale era 0.76f)
+                m_MoveVector.y -= jumpAbortSpeedReduction * Time.deltaTime;
+            }
+            
         }
-        //Movimiento Horizontal aereo
+        //Salto9. Movimiento Horizontal aereo deseado
         public void AirborneHorizontalMovement()
-        {
+        {   // velocidad deseada= 7
             float desiredSpeed = PlayerInput.Instance.Horizontal.Value * maxSpeed;
 
             float acceleration;
-
+            //Si hay inpunt horizontal en el aire
             if (PlayerInput.Instance.Horizontal.ReceivingInput)
+                //100 * 1= 100
                 acceleration = groundAcceleration * airborneAccelProportion;
-            else
+            else//100 * 0.5= 50
                 acceleration = groundDeceleration * airborneDecelProportion;
-
+            //0, 7, 100 * 0.02= 2 //7,0,50 *0.02= 1
             m_MoveVector.x = Mathf.MoveTowards(m_MoveVector.x, desiredSpeed, acceleration * Time.deltaTime);
         }
-        //Movimiento aereo vetical
+        //Salto11. Movimiento aereo vetical (maxima altura o techo y gravedad en aire)
         public void AirborneVerticalMovement()
-        {   //Si el vector en y es aproximadamente 0 ó golpea techo y el vectorY es mayor a 0
+        {   //Si el vector en y es aproximadamente 0 ó golpea techo y el vectorY es mayor a 0 osea
             if (Mathf.Approximately(m_MoveVector.y, 0f) || m_CharacterController2D.IsCeilinged && m_MoveVector.y > 0f)
             {
+                //Gravedad4 (aire) Golpeo algo o alcanzo maxima altura
                 m_MoveVector.y = 0f;// establezcalo en cero
+                
             }
-            m_MoveVector.y -= gravity * Time.deltaTime;//aplique gravedad
+            //Gravedad3 (aire) Aplica gravedad mientras se esta en estado de salto,Evita Salto infinito
+            m_MoveVector.y -= gravity* Time.deltaTime;//aplique gravedad normal: y= y-38*0.02=-0.76
+            
         }
-        //Comprobar el imput de salto
+        //Salto2. Comprobar el input de salto, devuelve bool true si es presionado, es llamado en LocomotionSMB...
         public bool CheckForJumpInput()
         {
             return PlayerInput.Instance.Jump.Down;
@@ -710,14 +724,14 @@ namespace Gamekit2D
                 StartCoroutine(DieRespawnCoroutine(false, true));
             }
         }
-
+        //Si muero
         public void OnDie()
         {
-            m_Animator.SetTrigger(m_HashDeadPara);
+            m_Animator.SetTrigger(m_HashDeadPara);//envio parametro de muerte
 
-            StartCoroutine(DieRespawnCoroutine(true, false));
+            StartCoroutine(DieRespawnCoroutine(true, false));//e inicio corutina abajo
         }
-
+        //llamado por OnDie aca arriba
         IEnumerator DieRespawnCoroutine(bool resetHealth, bool useCheckPoint)
         {
             PlayerInput.Instance.ReleaseControl(true);

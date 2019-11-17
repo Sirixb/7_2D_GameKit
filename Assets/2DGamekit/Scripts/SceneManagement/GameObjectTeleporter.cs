@@ -36,7 +36,7 @@ namespace Gamekit2D
         protected static GameObjectTeleporter instance;
 
         protected PlayerInput m_PlayerInput;
-        protected bool m_Transitioning;
+        protected bool m_Transitioning;//esta en transicion
 
         void Awake ()
         {
@@ -50,48 +50,48 @@ namespace Gamekit2D
 
             m_PlayerInput = FindObjectOfType<PlayerInput>();
         }
-
+        //t1 varios metodos de teletransportacion
         public static void Teleport (TransitionPoint transitionPoint)
         {
             Transform destinationTransform = Instance.GetDestination (transitionPoint.transitionDestinationTag).transform;
             Instance.StartCoroutine (Instance.Transition (transitionPoint.transitioningGameObject, true, transitionPoint.resetInputValuesOnTransition, destinationTransform.position, true));
         }
-
+        //t2 a este se llega cuando teletransporto en la misma escena
         public static void Teleport (GameObject transitioningGameObject, Transform destination)
         {
             Instance.StartCoroutine (Instance.Transition (transitioningGameObject, false, false, destination.position, false));
         }
-
+        //t3
         public static void Teleport (GameObject transitioningGameObject, Vector3 destinationPosition)
         {
             Instance.StartCoroutine (Instance.Transition (transitioningGameObject, false, false, destinationPosition, false));
         }
-
+        //Corutina llamada a partir de los T# anteriores
         protected IEnumerator Transition (GameObject transitioningGameObject, bool releaseControl, bool resetInputValues, Vector3 destinationPosition, bool fade)
         {
-            m_Transitioning = true;
-
+            m_Transitioning = true;//inicio la transicion del jugador
+            //control suelto? no porque t2 lo mando en falso
             if (releaseControl)
             {
                 if (m_PlayerInput == null)
                     m_PlayerInput = FindObjectOfType<PlayerInput> ();
                 m_PlayerInput.ReleaseControl (resetInputValues);
             }
-
+            //falso desde t2
             if(fade)
-                yield return StartCoroutine (ScreenFader.FadeSceneOut ());
-
+                yield return StartCoroutine (ScreenFader.FadeSceneOut ());//ponga en negro
+            //el jugador se le asigna la nueva posicion
             transitioningGameObject.transform.position = destinationPosition;
         
-            if(fade)
+            if(fade)//ponga en transparente
                 yield return StartCoroutine (ScreenFader.FadeSceneIn ());
-
+            //Recupere el control del personaje
             if (releaseControl)
             {
                 m_PlayerInput.GainControl ();
             }
 
-            m_Transitioning = false;
+            m_Transitioning = false;//acabo la transición del jugador
         }
 
         protected SceneTransitionDestination GetDestination(SceneTransitionDestination.DestinationTag destinationTag)
