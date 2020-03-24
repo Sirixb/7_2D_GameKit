@@ -40,8 +40,8 @@ namespace Gamekit2D
         [Header("Melee Attack Data")]
         [EnemyMeleeRangeCheck]
         public float meleeRange = 3.0f;
-        public Damager meleeDamager;
-        public Damager contactDamager;
+        public Damager meleeDamager;//daño cuerpo a cuerpo (Script)
+        public Damager contactDamager;//daño por contacto (Script)
         [Tooltip("if true, the enemy will jump/dash forward when it melee attack")]
         public bool attackDash;
         [Tooltip("The force used by the dash")]
@@ -88,7 +88,7 @@ namespace Gamekit2D
 
         protected bool m_Dead = false;
 
-        protected readonly int m_HashSpottedPara = Animator.StringToHash("Spotted");
+        protected readonly int m_HashSpottedPara = Animator.StringToHash("Spotted");//manchado
         protected readonly int m_HashShootingPara = Animator.StringToHash("Shooting");
         protected readonly int m_HashTargetLostPara = Animator.StringToHash("TargetLost");
         protected readonly int m_HashMeleeAttackPara = Animator.StringToHash("MeleeAttack");
@@ -145,7 +145,7 @@ namespace Gamekit2D
         }
 
         void FixedUpdate()
-        {
+        {   //si esta muerto retorne
             if (m_Dead)
                 return;
 
@@ -173,9 +173,10 @@ namespace Gamekit2D
         {
             m_MoveVector.x = horizontalSpeed * m_SpriteForward.x;
         }
-        //Es llamado por un Behaviur añadido al estado de caminar de chomper
+        //Es llamado por un Behaviur añadido al estado de caminar de chomper, tambien en el estado de correr es llamado
         public bool CheckForObstacle(float forwardDistance)
         {
+            //Cuando emitimos el circulo con  un tamaño ligeramente pequeño que la altura del collider. Esto evitara que colisione con una protuberancia muy pequeña en el suelo
             //we circle cast with a size sligly small than the collider height. That avoid to collide with very small bump on the ground
             if (Physics2D.CircleCast(m_Collider.bounds.center, m_Collider.bounds.extents.y - 0.2f, m_SpriteForward, forwardDistance, m_Filter.layerMask.value))
             {
@@ -211,7 +212,7 @@ namespace Gamekit2D
         {
             m_MoveVector = newMoveVector;
         }
-
+        //Actualizar la cara
         public void UpdateFacing()
         {
             bool faceLeft = m_MoveVector.x < 0f;
@@ -228,13 +229,13 @@ namespace Gamekit2D
         }
         //Todo parte de esta funcion que es llamada en el comportamiento de la maquina de estados en el estado ChomperWalk
         public void ScanForPlayer()
-        {
+        {   //si el personaje no tiene el control, ellos no reaccionan, asi que no los persiguas
             //If the player don't have control, they can't react, so do not pursue them
             if (!PlayerInput.Instance.HaveControl)
                 return;
             //Dirección en donde esta el jugador
             Vector3 dir = PlayerCharacter.PlayerInstance.transform.position - transform.position;
-            //la distancia del jugador es mayor a la distancia de vista entonces salgase
+            //la distancia del jugador es mayor a la distancia de vista entonces salgase porque no lo ha visto
             if (dir.sqrMagnitude > viewDistance * viewDistance)
             {
                 return;
@@ -248,15 +249,15 @@ namespace Gamekit2D
             {
                 return;
             }
-
+            //almacene en m_Target al jugador
             m_Target = PlayerCharacter.PlayerInstance.transform;
             m_TimeSinceLastTargetView = timeBeforeTargetLost;
             //si todo se cumple se activa este paso de transición, los return anteriores son comprobaciones que hace que termine la ejecución si se cumplen dichos condiciones
-            m_Animator.SetTrigger(m_HashSpottedPara);
+            m_Animator.SetTrigger(m_HashSpottedPara);//se activa el parametro Spotted (manchado) y permite empezar a correr
         }
-
-        public void OrientToTarget()
-        {
+        //orientacion al objetivo
+        public void OrientToTarget()//es llamado desde el script behaviour:ChomperRunToTargetSMB en el estado de correr que fue llamado en el metodo anterior a este tambien en ChomperPatrolSMB
+        {   //Si no ha encontrado al objetivo retorne la ejecución
             if (m_Target == null)
                 return;
 
@@ -267,9 +268,9 @@ namespace Gamekit2D
                 SetFacingData(Mathf.RoundToInt(-m_SpriteForward.x));
             }
         }
-
-        public void CheckTargetStillVisible()
-        {
+        //Compruebe si el objetivo todavia es visible
+        public void CheckTargetStillVisible()//es llamado desde el script behaviour:ChomperRunToTargetSMB en el estado de correr que fue desencadenado en el metodo Scan for player mas arriba
+        {   //Todavia es visible despues de ser activado por el behaviour de patrullaje:ChomperPatrolSMB si no retorne la ejecución
             if (m_Target == null)
                 return;
 
@@ -292,14 +293,14 @@ namespace Gamekit2D
 
             if (m_TimeSinceLastTargetView <= 0.0f)
             {
-                ForgetTarget();
+                ForgetTarget();//Olvide el objetivo
             }
         }
-
-        public void ForgetTarget()
+        //Olvide al obejtivo
+        public void ForgetTarget()//llamado en el behaviour ChomperRunToTargetSMB
         {
-            m_Animator.SetTrigger(m_HashTargetLostPara);
-            m_Target = null;
+            m_Animator.SetTrigger(m_HashTargetLostPara);//Activa el parametro TargetLost que me lleva al estado de Idle que con exit time pasa al estado caminar y a su vez a patrullar ChomperPatrolSMB
+            m_Target = null;//no hay objetivo
         }
 
         //This is used in case where there is a delay between deciding to shoot and shoot (e.g. Spitter that have an animation before spitting)
@@ -311,10 +312,10 @@ namespace Gamekit2D
 
             m_TargetShootPosition = m_Target.transform.position;
         }
-
+        //llamado cada frame cuando el enemigo esta en persecución para comprobar el rango y el detonador de ataque si esta en el rango
         //Call every frame when the enemy is in pursuit to check for range & Trigger the attack if in range
         public void CheckMeleeAttack()
-        {
+        {   //si perdemos el objetivo, no deberiambos atacar y devolvemos la ejecución
             if (m_Target == null)
             {//we lost the target, shouldn't shoot
                 return;
@@ -322,11 +323,11 @@ namespace Gamekit2D
             // si el jugador esta dentro del rango Ataque!
             if((m_Target.transform.position - transform.position).sqrMagnitude < (meleeRange * meleeRange))
             {
-                m_Animator.SetTrigger(m_HashMeleeAttackPara);
+                m_Animator.SetTrigger(m_HashMeleeAttackPara);//Se activa el parametro de ataque
                 meleeAttackAudio.PlayRandomSound();
             }
         }
-
+        //Esto es llamado cuando el damager es activado (asi el enemigo puede herir al jugador). Probablemente(es llamado) sea llamado por la animación a través del evento de animación (ver la animación de ataque del Chomper)
         //This is called when the damager get enabled (so the enemy can damage the player). Likely be called by the animation throught animation event (see the attack animation of the Chomper)
         public void StartAttack()
         {
@@ -334,19 +335,19 @@ namespace Gamekit2D
                 meleeDamager.transform.localPosition = Vector3.Scale(m_LocalDamagerPosition, new Vector3(-1, 1, 1));
             else
                 meleeDamager.transform.localPosition = m_LocalDamagerPosition;
-
-            meleeDamager.EnableDamage();
-            meleeDamager.gameObject.SetActive(true);
+            
+            meleeDamager.EnableDamage();//Puede hacer daño bool
+            meleeDamager.gameObject.SetActive(true);//active el transform
 
             if (attackDash)
                 m_MoveVector = new Vector2(m_SpriteForward.x * attackForce.x, attackForce.y);
         }
-
+        //llamado con un evento en la animacion de ataque del enemigo chomper
         public void EndAttack()
         {
             if (meleeDamager != null)
             {
-                meleeDamager.gameObject.SetActive(false);
+                meleeDamager.gameObject.SetActive(false);//desactive el transform
                 meleeDamager.DisableDamage();
             }
         }
@@ -462,12 +463,12 @@ namespace Gamekit2D
 
             CameraShaker.Shake(0.15f, 0.3f);
         }
-
+        //llamado por OnTakeDamage en los enemigos
         public void Hit(Damager damager, Damageable damageable)
-        {
+        {   //Si murio retorne
             if (damageable.CurrentHealth <= 0)
                 return;
-
+            //activa el parametro hit en el animador del enemigo
             m_Animator.SetTrigger(m_HashHitPara);
 
             Vector2 throwVector = new Vector2(0, 3.0f);
@@ -514,13 +515,13 @@ namespace Gamekit2D
 
             m_SpriteRenderer.color = m_OriginalColor;
         }
-
+        //Deshabilitar Daño
         public void DisableDamage ()
         {
             if(meleeDamager != null)
-                meleeDamager.DisableDamage ();
+                meleeDamager.DisableDamage ();//Deshabilite el daño cuerpo a cuerpo
             if(contactDamager != null)
-                contactDamager.DisableDamage ();
+                contactDamager.DisableDamage ();//Deshabilite el daño por contacto
         }
 
         public void PlayFootStep()

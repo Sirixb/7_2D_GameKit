@@ -117,7 +117,7 @@ namespace Gamekit2D
         // MonoBehaviour Messages - called by Unity internally.
         void Awake()
         {
-            s_PlayerInstance = this;
+            s_PlayerInstance = this;//instancia del jugador se declara arriba debajo de la clase y se le manda este script
 
             m_CharacterController2D = GetComponent<CharacterController2D>();
             m_Animator = GetComponent<Animator>();
@@ -129,12 +129,12 @@ namespace Gamekit2D
         }
 
         void Start()
-        {
-            hurtJumpAngle = Mathf.Clamp(hurtJumpAngle, k_MinHurtJumpAngle, k_MaxHurtJumpAngle);
-            m_TanHurtJumpAngle = Mathf.Tan(Mathf.Deg2Rad * hurtJumpAngle);
-            m_FlickeringWait = new WaitForSeconds(flickeringDuration);
-
-            meleeDamager.DisableDamage();
+        {   //variables vinculadas con cuando es herido
+            hurtJumpAngle = Mathf.Clamp(hurtJumpAngle, k_MinHurtJumpAngle, k_MaxHurtJumpAngle);//AnguDañoSalto
+            m_TanHurtJumpAngle = Mathf.Tan(Mathf.Deg2Rad * hurtJumpAngle);//AnguDañoSalto
+            m_FlickeringWait = new WaitForSeconds(flickeringDuration);//la variable es de tipo Waitforseconds para poder ser llamada en la corutina y se le asigna el float de tiempo
+            //hasta que te encontre madafoca, esta es la causante de que de entrada se desactive el ataque de m_CanDamage en Damager para el jugador
+            //meleeDamager.DisableDamage();//Deshabilite el daño cuerpo a cuerpo
 
             m_ShotSpawnGap = 1f / shotsPerSecond;
             m_NextShotTime = Time.time;
@@ -204,7 +204,7 @@ namespace Gamekit2D
         void FixedUpdate()
         {
             //Funcion Move de CharacterController2D y le pasa el vector de movimiento
-            m_CharacterController2D.Move(m_MoveVector * Time.deltaTime);//Fisicas
+            m_CharacterController2D.Move(m_MoveVector * Time.deltaTime);//Controlador 2D Personaje Fisicas
             m_Animator.SetFloat(m_HashHorizontalSpeedPara, m_MoveVector.x);//Parametro X animador
             m_Animator.SetFloat(m_HashVerticalSpeedPara, m_MoveVector.y);//Parametro Y animador
             UpdateBulletSpawnPointPositions();
@@ -286,19 +286,19 @@ namespace Gamekit2D
 
             cameraFollowTarget.localPosition = new Vector2(newLocalPosX, newLocalPosY);
         }
-
+        //Corutina de parpadeo al ser herido
         protected IEnumerator Flicker()
         {
             float timer = 0f;
-
+            //mientras el temporizador sea menor al tiempo de invulnerabilidad
             while (timer < damageable.invulnerabilityDuration)
             {
-                spriteRenderer.enabled = !spriteRenderer.enabled;
-                yield return m_FlickeringWait;
-                timer += flickeringDuration;
+                spriteRenderer.enabled = !spriteRenderer.enabled;//active y desactive el sprite
+                yield return m_FlickeringWait;//por cada 0.05 asignados en la variable tipo wait for secongs a su vez asignada por un float de tiempo
+                timer += flickeringDuration;//Acumule cada vez 0.05
             }
 
-            spriteRenderer.enabled = true;
+            spriteRenderer.enabled = true;//deje habilitado  el render
         }
 
         protected IEnumerator Shoot()
@@ -335,7 +335,7 @@ namespace Gamekit2D
 
             rangedAttackAudioPlayer.PlayRandomSound();
         }
-
+        // Funciones públicas: llamadas principalmente por StateMachineBehaviours en el Animator Controller del personaje, pero también por Events.
         // Public functions - called mostly by StateMachineBehaviours in the character's Animator Controller but also by Events.
         public void SetMoveVector(Vector2 newMoveVector)
         {
@@ -372,7 +372,7 @@ namespace Gamekit2D
             m_MoveVector.y -= gravity * Time.deltaTime;//0 = 0 -38 * 0.02= Cada frame restele 0.76f 
 
             //Plataformas moviles verticales
-            //Si la cantidad acumulada en Y es menor a la de la gravedad: -1 < -38*0.02*3= -2.28
+            //Si la cantidad acumulada en Y es menor a la de la gravedad: -1 < -38 * 0.02 * 3= -2.28
             if (m_MoveVector.y < -gravity * Time.deltaTime * k_GroundedStickingVelocityMultiplier)
             {   //aplique esa misma cantidad: -2.28 (K_groun sirve para que no se atasque en las plataformas verticales)
                 m_MoveVector.y = -gravity * Time.deltaTime * k_GroundedStickingVelocityMultiplier;
@@ -386,7 +386,7 @@ namespace Gamekit2D
         }
         //Retorne el estado en un bool: si esta cayendo y si el parametro de suelo es falso
         public bool IsFalling()
-        {
+        {   //Estoy cayendo en el eje y Y el parametro de piso no esta activo
             return m_MoveVector.y < 0f && !m_Animator.GetBool(m_HashGroundedPara);
         }
         //Rotación
@@ -408,11 +408,11 @@ namespace Gamekit2D
         }
         //Continuacion Rotación este podria obligar la rotacion por ejemplo por un enemigo que agrede
         public void UpdateFacing(bool faceLeft)
-        {
+        {   //si cara izquierda es true
             if (faceLeft)
-            {
+            {   //Flip el render hacia la izquierda
                 spriteRenderer.flipX = !spriteOriginallyFacesLeft;
-                m_CurrentBulletSpawnPoint = facingLeftBulletSpawnPoint;
+                m_CurrentBulletSpawnPoint = facingLeftBulletSpawnPoint;//voltee tambien el spawn del arma
             }
             else
             {
@@ -420,7 +420,7 @@ namespace Gamekit2D
                 m_CurrentBulletSpawnPoint = facingRightBulletSpawnPoint;
             }
         }
-        //Continuacion Rotación
+        //Obtener Cara (Continuacion Rotación)
         public float GetFacing()
         {
             return spriteRenderer.flipX != spriteOriginallyFacesLeft ? -1f : 1f;
@@ -428,9 +428,9 @@ namespace Gamekit2D
         //MHorizontal2: useInput llega en true desde LocomotionSMB
         public void GroundedHorizontalMovement(bool useInput, float speedScale = 1f)//el bool seguro sirve para validadr el poder controlar el jugador
         {
-            //VelocidadDeseada = Hay input del usuario?(true por defecto) si si asigne input 1 * 7 *1f(variable local)= 7 o -7  sino  0f
+            //VelocidadDeseada = Hay input del usuario?(true por defecto en varios monobehaviours como ej Locomotion) si si asigne input 1 * 7 *1f(variable local)= 7 o -7  sino  0f
             float desiredSpeed = useInput ? PlayerInput.Instance.Horizontal.Value * maxSpeed * speedScale : 0f;
-            //AceleraciOn = true por defecto y recibe inpunt? aceleraciónSuelo, sino desaceleración.
+            //AceleraciOn = puede usar input y esta recibiendo inpunt? aceleraciónSuelo, sino desaceleración.
             float acceleration = useInput && PlayerInput.Instance.Horizontal.ReceivingInput ? groundAcceleration : groundDeceleration;
             // Mueva horizontalmente(0,7,100 * 0.02f=2f)= 7 ó -7
             m_MoveVector.x = Mathf.MoveTowards(m_MoveVector.x, desiredSpeed, acceleration * Time.deltaTime);
@@ -458,7 +458,7 @@ namespace Gamekit2D
             }
             else
                 m_CurrentSurface = null;
-            //Asigne si esta en el suelo o no
+            //Asigne si esta en el suelo o no desde pasa tambien al salto o Airborne
             m_Animator.SetBool(m_HashGroundedPara, grounded);
             //devuelva el estado de suelo
             return grounded;
@@ -546,7 +546,7 @@ namespace Gamekit2D
             // o suelto el boton de salto mientras esta subiendo
             if (!PlayerInput.Instance.Jump.Held && m_MoveVector.y > 0.0f)//
             {
-                print("gravedad solte boton");
+                //print("gravedad solte boton");
                 //Gravedad2 (aplicada en aire): Aumnete la velocidad de caida o aplique mas gravedad: y= y - 100*0.02=2 ( la gravedad normale era 0.76f)
                 m_MoveVector.y -= jumpAbortSpeedReduction * Time.deltaTime;
             }
@@ -569,7 +569,7 @@ namespace Gamekit2D
         }
         //Salto11. Movimiento aereo vetical (maxima altura o techo y gravedad en aire)
         public void AirborneVerticalMovement()
-        {   //Si el vector en y es aproximadamente 0 ó golpea techo y el vectorY es mayor a 0 osea
+        {   //Si el vector en Y es aproximadamente 0 ó golpea techo y el vectorY es mayor a 0 osea esta todavia subiendo
             if (Mathf.Approximately(m_MoveVector.y, 0f) || m_CharacterController2D.IsCeilinged && m_MoveVector.y > 0f)
             {
                 //Gravedad4 (aire) Golpeo algo o alcanzo maxima altura
@@ -672,7 +672,7 @@ namespace Gamekit2D
                 m_ShootingCoroutine = null;
             }
         }
-
+        //forzar que no se pase al substate de arma, llamado por MeleeAttack
         public void ForceNotHoldingGun()
         {
             m_Animator.SetBool(m_HashHoldingGunPara, false);
@@ -687,51 +687,53 @@ namespace Gamekit2D
         {
             damageable.DisableInvulnerability();
         }
-
+        //obtenga la direccion del daño
         public Vector2 GetHurtDirection()
-        {
+        {   //Obtiene de damageable la direccion del daño
             Vector2 damageDirection = damageable.GetDamageDirection();
-
+            //si el ataque viene desde encima retorne la direccion de X y 0 en Y
             if (damageDirection.y < 0f)
                 return new Vector2(Mathf.Sign(damageDirection.x), 0f);
+            //Para Y = valor absoluto de la direccion es decir positivo * tangente del angulo configurado en el start
+            float y = Mathf.Abs(damageDirection.x) * m_TanHurtJumpAngle;/*valor en posivito de x (osea hacia arriba, lo que genera la misma distancia para y)  *  por la tangente de angulo 45 que es 1,
+            posteriormente multiplicado por la amplitud llamada hurtJumpSpeed en HurtSMB*/
 
-            float y = Mathf.Abs(damageDirection.x) * m_TanHurtJumpAngle;
-
-            return new Vector2(damageDirection.x, y).normalized;
+            return new Vector2(damageDirection.x, y).normalized;//es clave normalizar ya que pequeños valores los transforma a escalar 1
         }
-
+        //Si es herido
         public void OnHurt(Damager damager, Damageable damageable)
         {
             //if the player don't have control, we shouldn't be able to be hurt as this wouldn't be fair
             if (!PlayerInput.Instance.HaveControl)
                 return;
+            //Actualice la cara segun la direccion del daño obtenido
+            UpdateFacing(damageable.GetDamageDirection().x > 0f);//si es mayor a cero lanzo el ataque hacia la derecha y me impacto en la izquerda
+            damageable.EnableInvulnerability();//activa invulnerabilidad
+            //Trigger de daño recibido al animador
+            m_Animator.SetTrigger(m_HashHurtPara);//Llama a HurtSMB que activa el flickering
 
-            UpdateFacing(damageable.GetDamageDirection().x > 0f);
-            damageable.EnableInvulnerability();
-
-            m_Animator.SetTrigger(m_HashHurtPara);
-
+            //solo forzamos la reaparición si helath > 0, de lo contrario, los activadores forceRespawn y Death se establecen en el animador, jugando entre sí.
             //we only force respawn if helath > 0, otherwise both forceRespawn & Death trigger are set in the animator, messing with each other.
-            if(damageable.CurrentHealth > 0 && damager.forceRespawn)
+            if (damageable.CurrentHealth > 0 && damager.forceRespawn)
                 m_Animator.SetTrigger(m_HashForcedRespawnPara);
-
+            //piso falso
             m_Animator.SetBool(m_HashGroundedPara, false);
             hurtAudioPlayer.PlayRandomSound();
-
+            // si la salud es < 0, significa muerte la devolución de llamada tomara cuidado de reaparecer
             //if the health is < 0, mean die callback will take care of respawn
-            if(damager.forceRespawn && damageable.CurrentHealth > 0)
+            if (damager.forceRespawn && damageable.CurrentHealth > 0)
             {
                 StartCoroutine(DieRespawnCoroutine(false, true));
             }
         }
-        //Si muero
+        //Si muero, es llamado en el evento ondie en Damageable
         public void OnDie()
         {
             m_Animator.SetTrigger(m_HashDeadPara);//envio parametro de muerte
 
             StartCoroutine(DieRespawnCoroutine(true, false));//e inicio corutina abajo
         }
-        //llamado por OnDie aca arriba
+        //llamado por OnDie aca arriba y tambien llamado en Onhurt
         IEnumerator DieRespawnCoroutine(bool resetHealth, bool useCheckPoint)
         {
             PlayerInput.Instance.ReleaseControl(true);
@@ -744,44 +746,44 @@ namespace Gamekit2D
             yield return StartCoroutine(ScreenFader.FadeSceneIn());
             PlayerInput.Instance.GainControl();
         }
-
+        //Inice el parapadeo al ser herido, inicia una corrutina y es llamado desde HurtSMB
         public void StartFlickering()
         {
-            m_FlickerCoroutine = StartCoroutine(Flicker());
+            m_FlickerCoroutine = StartCoroutine(Flicker());//a la variable de tipo Coroutine iniciele una corrutina flicker()
         }
-
+        //Detenga la corutina de parpadeo llamada en Respawn a su vez llamado en OnDie
         public void StopFlickering()
         {
             StopCoroutine(m_FlickerCoroutine);
             spriteRenderer.enabled = true;
         }
-
-        public bool CheckForMeleeAttackInput()
+        //Comprueba si ataque, si presione el boton, desencadenando el siguiente metodo abajo
+        public bool CheckForMeleeAttackInput()//Llamado por Locomotion
         {
             return PlayerInput.Instance.MeleeAttack.Down;
         }
-
+        //Activado por el metodo anterior en locomotion
         public void MeleeAttack()
         {
-            m_Animator.SetTrigger(m_HashMeleeAttackPara);
+            m_Animator.SetTrigger(m_HashMeleeAttackPara);//activo parametro de ataque 
         }
-
+        //Habilitado por Script MeleeAttack en Behaviour del estado MeleeAttack al entrar al estado
         public void EnableMeleeAttack()
         {
-            meleeDamager.EnableDamage();
-            meleeDamager.disableDamageAfterHit = true;
+            meleeDamager.EnableDamage();//Habilita m_CanDamage de Damager
+            meleeDamager.disableDamageAfterHit = true;//Deshablite el daño cuerpo a cuerpo una vez lo ejecute, es el unico lugar donde se cambia esta variable a true en el script Damager
             meleeAttackAudioPlayer.PlayRandomSound();
         }
-
+        //Habilitado por Script MeleeAttack en Behaviour del estado MeleeAttack al entrar al estado
         public void DisableMeleeAttack()
         {
-            meleeDamager.DisableDamage();
+            meleeDamager.DisableDamage();//Deshablite el daño cuerpo a cuerpo
         }
-
+        //lleven el collider al piso
         public void TeleportToColliderBottom()
-        {
+        {   //posicion del rigig + compensacion del collider en si + (0,-1) * tamaño * la mitad
             Vector2 colliderBottom = m_CharacterController2D.Rigidbody2D.position + m_Capsule.offset + Vector2.down * m_Capsule.size.y * 0.5f;
-            m_CharacterController2D.Teleport(colliderBottom);
+            m_CharacterController2D.Teleport(colliderBottom);//funcion de teletransportar mueve el rigidbody a la posicion deseada
         }
 
         public void PlayFootstep()
@@ -791,12 +793,12 @@ namespace Gamekit2D
             footstepPosition.z -= 1;
             VFXController.Instance.Trigger("DustPuff", footstepPosition, 0, false, null, m_CurrentSurface);
         }
-
+        //Es llamada por DieRespawnCoroutine
         public void Respawn(bool resetHealth, bool useCheckpoint)
         {
             if (resetHealth)
                 damageable.SetHealth(damageable.startingHealth);
-
+            // reiniciamos el activador de daño, ya que no queremos que el jugador regrese a la animación de daño una vez reaparecido
             //we reset the hurt trigger, as we don't want the player to go back to hurt animation once respawned
             m_Animator.ResetTrigger(m_HashHurtPara);
             if (m_FlickerCoroutine != null)

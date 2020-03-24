@@ -73,7 +73,7 @@ namespace Gamekit2D
         /// This moves the character without any implied velocity.
         /// </summary>
         /// <param name="position">The new position of the character in global space.</param>
-        public void Teleport(Vector2 position)
+        public void Teleport(Vector2 position)//llamado al inicio de locomotion
         {
             Vector2 delta = position - m_CurrentPosition;
             m_PreviousPosition += delta;
@@ -146,11 +146,11 @@ namespace Gamekit2D
                 //Cuenta la cantidad de objetos golpeados
                 int count = Physics2D.Raycast(m_RaycastPositions[i], raycastDirection, m_ContactFilter, m_HitBuffer, raycastDistance);
 
-                if (bottom)//Si es piso almacene esos colliders.
+                if (bottom)//Si es piso almacene lo encontrado colliders o no.
                 {
                     //Encontro mas de un golpe? si si:almacene ese golpetemporal encontrado, sino:almacene un raycashit2d vacio
                     m_FoundHits[i] = count > 0 ? m_HitBuffer[0] : new RaycastHit2D();//almacene el primer objeto golpeado de cada uno de los 3 rayos
-                    m_GroundColliders[i] = m_FoundHits[i].collider; //Almacene los collider de los primeros golpes encontrados
+                    m_GroundColliders[i] = m_FoundHits[i].collider; //Almacene los collider de los primeros golpes encontrados (Se usa para plataformas mobiles mas abajo)
                 }
                 else//Es techo
                 {

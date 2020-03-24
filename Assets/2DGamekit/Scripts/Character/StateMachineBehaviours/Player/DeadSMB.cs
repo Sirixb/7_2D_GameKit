@@ -5,7 +5,7 @@ namespace Gamekit2D
     public class DeadSMB : SceneLinkedSMB<PlayerCharacter>
     {
         public override void OnSLStatePostEnter (Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-        {
+        {   //Establece el movimiento * el salto de daño
             m_MonoBehaviour.SetMoveVector(m_MonoBehaviour.GetHurtDirection() * m_MonoBehaviour.hurtJumpSpeed);
         }
 

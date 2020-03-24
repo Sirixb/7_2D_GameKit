@@ -129,7 +129,7 @@ public class Enemy : PoolObject<EnemySpawner, Enemy, Vector2>
         instance.SetActive(true);
         damageable.SetHealth(damageable.startingHealth);
         damageable.DisableInvulnerability();
-        enemyBehaviour.contactDamager.EnableDamage();
+        enemyBehaviour.contactDamager.EnableDamage();//contactDamager o daño por contacto es un transform con el script adjunto Damager e invoca y habilita el daño en todo momento
         SceneLinkedSMB<EnemyBehaviour>.Initialise(enemyBehaviour.GetComponent<Animator>(), enemyBehaviour);
         enemyBehaviour.EndAttack();
     }

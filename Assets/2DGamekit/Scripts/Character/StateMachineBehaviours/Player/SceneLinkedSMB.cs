@@ -12,7 +12,7 @@ namespace Gamekit2D
     public class SceneLinkedSMB<TMonoBehaviour> : SealedSMB 
         where TMonoBehaviour : MonoBehaviour
     {
-        protected TMonoBehaviour m_MonoBehaviour;//se declara una variable m_MonoBehaviour: de TipoMonoBehaviour
+        protected TMonoBehaviour m_MonoBehaviour;//se declara una variable m_MonoBehaviour: de TipoMonoBehaviour, es llamada en todos los behaviours y puede heredar de cualquier script para llamar sus miembros
     
         bool m_FirstFrameHappened;
         bool m_LastFrameHappened;
@@ -99,39 +99,48 @@ namespace Gamekit2D
 
         /// <summary>
         /// Called before Updates when execution of the state first starts (on transition to the state).
+        /// Llamado antes de Actualizaciones cuando comienza la ejecución del estado (en la transición al estado).
         /// </summary>
         public virtual void OnSLStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
-    
+
         /// <summary>
         /// Called after OnSLStateEnter every frame during transition to the state.
+        /// Llamado después de OnSLStateEnter cada cuadro durante la transición al estado.
         /// </summary>
         public virtual void OnSLTransitionToStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
 
         /// <summary>
         /// Called on the first frame after the transition to the state has finished.
+        /// Llamado en el primer cuadro después de que la transición al estado ha terminado.
         /// </summary>
         public virtual void OnSLStatePostEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
 
         /// <summary>
         /// Called every frame after PostEnter when the state is not being transitioned to or from.
-        /// </summary>
+        /// Llamó a cada fotograma después de PostEnter cuando el estado no se está haciendo la transición hacia o desde.
+        /// </summary>//Creo equivaldria al  OnStateUpdate, llamado en Locomotion, Aribone, Hurt...
         public virtual void OnSLStateNoTransitionUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
 
         /// <summary>
         /// Called on the first frame after the transition from the state has started.  Note that if the transition has a duration of less than a frame, this will not be called.
+        /// Llamado en el primer fotograma después de que la transición del estado ha comenzado. Tenga en cuenta que si la transición tiene una duración inferior a un fotograma, esto no se llamará.
         /// </summary>
         public virtual void OnSLStatePreExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
 
         /// <summary>
         /// Called after OnSLStatePreExit every frame during transition to the state.
+        /// Llamado después de OnSLStatePreExit cada fotograma durante la transición al estado.
         /// </summary>
         public virtual void OnSLTransitionFromStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
 
         /// <summary>
         /// Called after Updates when execution of the state first finshes (after transition from the state).
+        /// Se llama después de las actualizaciones cuando finaliza la ejecución del estado (después de la transición desde el estado).
         /// </summary>
         public virtual void OnSLStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) { }
 
+
+        //SE REPITE: PERO CON  AnimatorControllerPlayable controller como parametro
         /// <summary>
         /// Called before Updates when execution of the state first starts (on transition to the state).
         /// </summary>

@@ -38,7 +38,7 @@ namespace Gamekit2D
                 m_LookupOverride[overrides[i].tile] = overrides[i].clips;
             }
         }
-
+        //Reproduzca un sonido aleatorio
         public void PlayRandomSound(TileBase surface = null)
         {
             AudioClip[] source = clips;
